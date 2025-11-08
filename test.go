@@ -245,16 +245,16 @@ func run() {
 		}
 
 		rot := renderer.cachedRotationMatrix
-		forward := r3.Vec{X: -rot.At(2, 0), Y: -rot.At(2, 1), Z: -rot.At(2, 2)}
+		forward := r3.Vec{X: rot.At(2, 0), Y: rot.At(2, 1), Z: rot.At(2, 2)}
 		right := r3.Vec{X: rot.At(0, 0), Y: rot.At(0, 1), Z: rot.At(0, 2)}
 		up := r3.Vec{X: rot.At(1, 0), Y: rot.At(1, 1), Z: rot.At(1, 2)}
 
 		speed := 20.0 * dt
 		if win.Pressed(pixelgl.KeyW) {
-			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(-speed, forward))
+			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(speed, forward))
 		}
 		if win.Pressed(pixelgl.KeyS) {
-			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(speed, forward))
+			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(-speed, forward))
 		}
 		if win.Pressed(pixelgl.KeyD) {
 			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(speed, right))
@@ -271,28 +271,25 @@ func run() {
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) && mouseGrabbed && !firstClickAfterFocus {
 			forwardNorm := r3.Scale(1/math.Sqrt(forward.X*forward.X+forward.Y*forward.Y+forward.Z*forward.Z), forward)
-			step, maxDist := float64(gridSize)/2, 50.0 // larger step, faster
+			step := float64(gridSize) / 10.0
+			maxDist := 200.0
+
 			var hit r3.Vec
 			placed := false
 
-			for d := 0.0; d < maxDist; d += step {
+			for d := 0.0; d <= maxDist; d += step {
 				p := r3.Add(renderer.cPOS, r3.Scale(d, forwardNorm))
+
 				snap := r3.Vec{
 					X: math.Floor(p.X/float64(gridSize)) * float64(gridSize),
 					Y: math.Floor(p.Y/float64(gridSize)) * float64(gridSize),
 					Z: math.Floor(p.Z/float64(gridSize)) * float64(gridSize),
 				}
 
-				// Baseplate: only if y == 0 exactly
-				if snap.Y <= 0 || snap.Y >= 1 {
-					hit = snap
-					placed = true
-					break
-				}
-
-				// Check if ray hits an existing block
+				// block hit test
 				var hitBlock r3.Vec
 				blockExists := false
+
 				for _, b := range placedBlocks {
 					if b == snap {
 						blockExists = true
@@ -302,16 +299,20 @@ func run() {
 				}
 
 				if blockExists {
-					// Determine which face we hit relative to block
 					localPos := r3.Sub(p, hitBlock)
 					offset := r3.Vec{}
-					if math.Abs(localPos.X) > math.Abs(localPos.Y) && math.Abs(localPos.X) > math.Abs(localPos.Z) {
+
+					axX := math.Abs(localPos.X)
+					axY := math.Abs(localPos.Y)
+					axZ := math.Abs(localPos.Z)
+
+					if axX >= axY && axX >= axZ {
 						if localPos.X > 0 {
 							offset.X = float64(gridSize)
 						} else {
 							offset.X = -float64(gridSize)
 						}
-					} else if math.Abs(localPos.Y) > math.Abs(localPos.Z) {
+					} else if axY >= axZ {
 						if localPos.Y > 0 {
 							offset.Y = float64(gridSize)
 						} else {
@@ -324,13 +325,25 @@ func run() {
 							offset.Z = -float64(gridSize)
 						}
 					}
+
 					hit = r3.Add(hitBlock, offset)
 					placed = true
 					break
 				}
+
+				// small range baseplate check
+				if snap.Y >= 0 && snap.Y < float64(gridSize) {
+					hit = r3.Vec{
+						X: snap.X,
+						Y: 0,
+						Z: snap.Z,
+					}
+					placed = true
+					break
+				}
+
 			}
 
-			// Prevent overlapping block
 			if placed {
 				overlap := false
 				for _, b := range placedBlocks {
@@ -341,7 +354,15 @@ func run() {
 				}
 				if !overlap {
 					placedBlocks = append(placedBlocks, hit)
-					cube := renderer.NewCube([]color.Color{blockColors[selected]}, hit, r3.Vec{}, float64(gridSize), float64(gridSize), float64(gridSize), true)
+					cube := renderer.NewCube(
+						[]color.Color{blockColors[selected]},
+						hit,
+						r3.Vec{},
+						float64(gridSize),
+						float64(gridSize),
+						float64(gridSize),
+						true,
+					)
 					renderer.Render3D = append(renderer.Render3D, cube...)
 				}
 			}

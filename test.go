@@ -181,7 +181,7 @@ func run() {
 	gridSize := 5
 	for x := -50; x <= 50; x += gridSize {
 		for z := -50; z <= 50; z += gridSize {
-			cube := renderer.NewCube([]color.Color{colornames.Gray}, r3.Vec{X: float64(x), Y: 0, Z: float64(z)}, r3.Vec{}, float64(gridSize), 1, float64(gridSize), true)
+			cube := renderer.NewCube([]color.Color{colornames.Gray}, r3.Vec{X: float64(x), Y: -1.25, Z: float64(z)}, r3.Vec{}, float64(gridSize), 1, float64(gridSize), true)
 			renderer.Render3D = append(renderer.Render3D, cube...)
 		}
 	}
@@ -265,13 +265,13 @@ func run() {
 		if win.Pressed(pixelgl.KeySpace) {
 			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(speed, up))
 		}
-		if win.Pressed(pixelgl.KeyLeftControl) {
+		if win.Pressed(pixelgl.KeyLeftShift) {
 			renderer.cPOS = r3.Add(renderer.cPOS, r3.Scale(-speed, up))
 		}
 
 		if win.JustPressed(pixelgl.MouseButtonLeft) && mouseGrabbed && !firstClickAfterFocus {
 			forwardNorm := r3.Scale(1/math.Sqrt(forward.X*forward.X+forward.Y*forward.Y+forward.Z*forward.Z), forward)
-			step := float64(gridSize) / 10.0
+			step := float64(gridSize) / 100.0
 			maxDist := 200.0
 
 			var hit r3.Vec
@@ -332,7 +332,7 @@ func run() {
 				}
 
 				// small range baseplate check
-				if snap.Y >= 0 && snap.Y < float64(gridSize) {
+				if snap.Y < float64(gridSize) {
 					hit = r3.Vec{
 						X: snap.X,
 						Y: 0,

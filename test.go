@@ -284,7 +284,7 @@ func run() {
 				}
 
 				// Baseplate: only if y == 0 exactly
-				if snap.Y == 0 {
+				if snap.Y <= 0 || snap.Y >= 1 {
 					hit = snap
 					placed = true
 					break

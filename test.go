@@ -162,7 +162,7 @@ func (r *Renderer3D) Tick(win pixel.Target) {
 
 func run() {
 	cfg := pixelgl.WindowConfig{
-		Title:  "Flat Builder 3D",
+		Title:  "CM2GO",
 		Bounds: pixel.R(0, 0, 900, 600),
 		VSync:  true,
 	}
